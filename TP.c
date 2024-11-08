@@ -10,7 +10,16 @@ struct Node
     struct Node *prev;
 };
 
+struct node_LFU
+{
+    int data;
+    int level;
+    struct node_LFU *next;
+    struct node_LFU *prev;
+};
+
 struct Node *head = NULL;
+struct node_LFU *start = NULL;
 
 void fifo();
 bool hit_fifo(int number_search, int *hit, int *Miss, int cash_memory[]);
@@ -21,6 +30,10 @@ void Create_new_Node(int data);
 void LRU_hit(int number_search, int *hit, int *Miss, int seq_size);
 void delet_node(int number_search);
 void delete_tail();
+void Create_new_Node_LFU(int data);
+void LFU(int seq_size);
+void reaplace_LFU(int number);
+bool LFU_hit(int new_number, int *Hit, int *Miss, int seq_size);
 
 int main()
 {
@@ -28,25 +41,30 @@ int main()
     int seq_size, choice;
     printf("Enter the number of words in the sequence: \n");
     scanf("%i", &seq_size);
+    
+        printf("1/FIFO \n2/RANDOM \n3/LRU\n4/LFU\n");
+        scanf("%i", &choice);
 
-    printf("1/FIFO \n2/RANDOM \n3/LRU\n");
-    scanf("%i", &choice);
+        switch (choice)
+        {
+        case 1:
+            fifo(seq_size);
+            break;
+        case 2:
+            random_ex(seq_size);
 
-    switch (choice)
-    {
-    case 1:
-        fifo(seq_size);
-        break;
-    case 2:
-        random_ex(seq_size);
-
-        break;
-    case 3:
-        LRU(seq_size);
-        break;
-    default:
-        break;
-    }
+            break;
+        case 3:
+            LRU(seq_size);
+            break;
+        case 4:
+            LFU(seq_size);
+            break;
+        default:
+            break;
+        }
+        
+    LFU(seq_size);
 }
 
 void fifo(int seq_size)
@@ -242,4 +260,115 @@ void delete_tail()
         head->prev = tail->prev;
         free(tail);
     }
+}
+
+void LFU(int seq_size)
+{
+
+    int Miss = 0;
+    int Hit = 0;
+    int new_number;
+
+    printf("enter %i number\n", seq_size);
+    for (int index = 0; index < seq_size; index++)
+    {
+        scanf("%i", &new_number);
+        if (!LFU_hit(new_number, &Hit, &Miss, seq_size))
+        {
+            Create_new_Node_LFU(new_number);
+        }
+    }
+
+    struct node_LFU *prin = start;
+    printf("Contents of the circular doubly linked list:\n");
+    if (start != NULL)
+    {
+        do
+        {
+            printf("%i ", prin->data);
+            prin = prin->next;
+        } while (prin != start);
+    }
+    printf("Hit: %i, Miss: %i\n", Hit, Miss);
+}
+
+void Create_new_Node_LFU(int data)
+{
+    struct node_LFU *new_node = (struct node_LFU *)malloc(sizeof(struct node_LFU));
+    new_node->data = data;
+    new_node->level = 1;
+    if (start == NULL)
+    {
+        start = new_node;
+        new_node->next = start;
+        new_node->prev = start;
+    }
+    else
+    {
+        new_node->next = start;
+        new_node->prev = start->prev;
+        start->prev->next = new_node;
+        start->prev = new_node;
+        start = new_node;
+    }
+}
+
+bool LFU_hit(int new_number, int *Hit, int *Miss, int seq_size)
+{
+
+    if (start == NULL)
+    {
+        (*Miss)++;
+        return false;
+    }
+
+    struct node_LFU *comp = start;
+    do
+    {
+        if (comp->data == new_number)
+        {
+            (*Hit)++;
+            comp->level++;
+            return true;
+        }
+        comp = comp->next;
+    } while (comp != start);
+
+    (*Miss)++;
+    if ((*Miss) > 8)
+    {
+        reaplace_LFU(new_number);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void reaplace_LFU(int number)
+{
+    struct node_LFU *comp = start->prev;
+    int min = comp->level;
+    do
+    {
+        comp = comp->prev;
+        if (min > comp->level)
+        {
+            min = comp->level;
+        }
+
+    } while (comp != start);
+
+    do
+    {
+        comp = comp->prev;
+        if (min == comp->level)
+        {
+            comp->data = number;
+            comp->level = 1;
+            break;
+        }
+
+    } while (comp != start);
 }
