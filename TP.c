@@ -64,7 +64,6 @@ int main()
             break;
         }
         
-    LFU(seq_size);
 }
 
 void fifo(int seq_size)
